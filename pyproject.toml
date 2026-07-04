@@ -7,7 +7,10 @@ authors = [
   { name = "Slyverr", email = "90329317+Slyverr@users.noreply.github.com" },
 ]
 requires-python = ">=3.14"
-dependencies = ["pyside6>=6.11.1"]
+dependencies = [
+    "pyside6>=6.11.1",
+    "requests>=2.34.2",
+]
 
 [project.scripts]
 screen-sentry = "screen_sentry.main:main"
