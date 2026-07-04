@@ -1,0 +1,23 @@
+[providers.lmstudio]
+url = "http://localhost:1234/api/v1/chat"
+body = """
+{
+  "model": "{{model}}",
+  "input": [
+    {
+      "type": "text",
+      "content": "{{prompt}}"
+    },
+    {
+      "type": "image",
+      "data_url": "data:image/png;base64,{{image}}"
+    }
+  ],
+  "system_prompt": "{{system}}",
+  "temperature": 0.1,
+  "reasoning": "off"
+}
+"""
+response_path = "output.0.content"
+model = "qwen/qwen3.5-9b"
+timeout = 120
