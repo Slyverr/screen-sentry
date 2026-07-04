@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 
 class TrayIcon(QSystemTrayIcon):
     quit_triggered = Signal()
+    capture_triggered = Signal()
 
     def __init__(self) -> None:
         super().__init__()
@@ -16,5 +17,6 @@ class TrayIcon(QSystemTrayIcon):
 
     def _build_menu(self) -> None:
         menu = QMenu()
+        menu.addAction("Capture", self.capture_triggered.emit)
         menu.addAction("Quit", self.quit_triggered.emit)
         self.setContextMenu(menu)

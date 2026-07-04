@@ -1,7 +1,9 @@
 import signal
 import sys
+from pathlib import Path
 
 from .app import App
+from .services.screenshot import ScreenshotService
 from .views.tray import TrayIcon
 
 
@@ -11,10 +13,15 @@ def main() -> None:
     app = App()
     app.setQuitOnLastWindowClosed(False)
 
+    screenshot_service = ScreenshotService(
+        save_dir=Path.home() / "Pictures" / "ScreenSentry"
+    )
+
     tray = TrayIcon()
     tray.show()
 
-    tray.activated.connect(lambda: print("Tray icon clicked"))
+    tray.activated.connect(screenshot_service.capture)
+    tray.capture_triggered.connect(screenshot_service.capture)
     tray.quit_triggered.connect(app.quit)
 
     sys.exit(app.exec())
