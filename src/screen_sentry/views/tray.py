@@ -1,3 +1,5 @@
+import os
+
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
@@ -10,7 +12,10 @@ class TrayIcon(QSystemTrayIcon):
     def __init__(self) -> None:
         super().__init__()
 
-        self.setIcon(QIcon.fromTheme(""))
+        icon_path = os.path.join(
+            os.path.dirname(os.path.dirname(__file__)), "assets", "icon.png"
+        )
+        self.setIcon(QIcon(icon_path))
         self.setToolTip("Screen Sentry")
 
         self._build_menu()
