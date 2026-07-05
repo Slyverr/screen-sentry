@@ -1,6 +1,6 @@
 import sys
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
 from screen_sentry.context import AppContext
 from screen_sentry.services.analyze import AnalyzeService
@@ -35,10 +35,20 @@ class App(QApplication):
         self._screenshot_service.capture_finished.connect(self._analyze_service.analyze)
 
         self._analyze_service.analysis_finished.connect(
-            lambda path, result: print(f"[Analysis] {result}")
+            lambda path, result: self._tray.showMessage(
+                "Analysis Complete",
+                result,
+                QSystemTrayIcon.MessageIcon.Information,
+                3000,
+            )
         )
         self._analyze_service.analysis_failed.connect(
-            lambda error: print(f"[Error] {error}")
+            lambda error: self._tray.showMessage(
+                "Analysis Failed",
+                error,
+                QSystemTrayIcon.MessageIcon.Critical,
+                3000,
+            )
         )
 
         self._tray.activated.connect(self._screenshot_service.capture)
