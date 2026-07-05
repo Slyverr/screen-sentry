@@ -1,19 +1,11 @@
 import base64
-from dataclasses import dataclass
 from pathlib import Path
 
 import requests
 from PySide6.QtCore import QObject, Signal
 
-from screen_sentry.config.config import AppConfig
 from screen_sentry.config.prompts import SYSTEM_PROMPT, USER_PROMPT
-from screen_sentry.config.providers import ProvidersConfig
-
-
-@dataclass
-class AppContext:
-    providers: ProvidersConfig
-    app: AppConfig
+from screen_sentry.context import AppContext
 
 
 class AnalyzeService(QObject):
@@ -34,8 +26,8 @@ class AnalyzeService(QObject):
         self.analysis_finished.emit(image_path, result)
 
     def _call_model(self, image_path: Path) -> str:
-        provider_name = self._ctx.app.get("app", "provider")
-        provider = self._ctx.providers.get(provider_name)
+        provider_name = self._ctx.app_config.get("app", "provider")
+        provider = self._ctx.providers_config.get(provider_name)
 
         image_b64 = base64.b64encode(image_path.read_bytes()).decode()
         body = provider.render_body(

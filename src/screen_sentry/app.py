@@ -3,9 +3,8 @@ from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 
-from screen_sentry.config.config import AppConfig
-from screen_sentry.config.providers import ProvidersConfig
-from screen_sentry.services.analyze import AnalyzeService, AppContext
+from screen_sentry.context import AppContext
+from screen_sentry.services.analyze import AnalyzeService
 from screen_sentry.services.screenshot import ScreenshotService
 from screen_sentry.views.tray import TrayIcon
 
@@ -24,7 +23,7 @@ class App(QApplication):
         self._connect_signals()
 
     def _init_services(self) -> None:
-        context = AppContext(app=AppConfig(), providers=ProvidersConfig())
+        context = AppContext()
 
         self._screenshot_service = ScreenshotService(
             save_dir=Path.home() / "Pictures" / "ScreenSentry"
