@@ -1,5 +1,4 @@
 import sys
-from pathlib import Path
 
 from PySide6.QtWidgets import QApplication
 
@@ -25,9 +24,7 @@ class App(QApplication):
     def _init_services(self) -> None:
         context = AppContext()
 
-        self._screenshot_service = ScreenshotService(
-            save_dir=Path.home() / "Pictures" / "ScreenSentry"
-        )
+        self._screenshot_service = ScreenshotService(context)
         self._analyze_service = AnalyzeService(context)
 
     def _init_tray(self) -> None:

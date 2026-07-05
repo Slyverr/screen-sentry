@@ -3,14 +3,17 @@ from pathlib import Path
 
 from PySide6.QtCore import QObject, QProcess, Signal
 
+from screen_sentry.context import AppContext
+
 
 class ScreenshotService(QObject):
     capture_finished = Signal(Path)
     capture_failed = Signal(str)
 
-    def __init__(self, save_dir: Path, parent: QObject | None = None) -> None:
+    def __init__(self, ctx: AppContext, parent: QObject | None = None) -> None:
         super().__init__(parent)
-        self._save_dir = save_dir
+
+        self._save_dir = ctx.app_config.save_dir
         self._save_dir.mkdir(parents=True, exist_ok=True)
         self._process: QProcess | None = None
 
