@@ -6,11 +6,12 @@ from PySide6.QtCore import QObject, Signal
 
 from screen_sentry.config.prompts import SYSTEM_PROMPT, USER_PROMPT
 from screen_sentry.context import AppContext
+from screen_sentry.utils.analysis_parser import AnalysisResult, parse_analysis
 
 
 class AnalyzeService(QObject):
-    analysis_finished = Signal(Path, str)
-    analysis_failed = Signal(str)
+    analysis_finished = Signal(Path, AnalysisResult)
+    analysis_failed = Signal(Path, str)
 
     def __init__(self, ctx: AppContext, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -18,9 +19,10 @@ class AnalyzeService(QObject):
 
     def analyze(self, image_path: Path) -> None:
         try:
-            result = self._call_model(image_path)
+            raw = self._call_model(image_path)
+            result = parse_analysis(raw)
         except Exception as exc:
-            self.analysis_failed.emit(str(exc))
+            self.analysis_failed.emit(image_path, str(exc))
             return
 
         self.analysis_finished.emit(image_path, result)
