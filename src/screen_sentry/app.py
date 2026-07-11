@@ -5,6 +5,7 @@ from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 from screen_sentry.context import AppContext
 from screen_sentry.services.analyze import AnalyzeService
 from screen_sentry.services.screenshot import ScreenshotService
+from screen_sentry.services.watch import WatchService
 from screen_sentry.utils.analysis_parser import AnalysisResult
 from screen_sentry.views.tray import TrayIcon
 
@@ -27,6 +28,7 @@ class App(QApplication):
 
         self._screenshot_service = ScreenshotService(context)
         self._analyze_service = AnalyzeService(context)
+        self._watch_service = WatchService(context)
 
     def _init_tray(self) -> None:
         self._tray = TrayIcon()
@@ -34,11 +36,15 @@ class App(QApplication):
 
     def _connect_signals(self) -> None:
         self._screenshot_service.capture_finished.connect(self._analyze_service.analyze)
+        self._watch_service.watch_capture_finished.connect(
+            self._analyze_service.analyze
+        )
 
         self._analyze_service.analysis_finished.connect(self._on_analysis_finished)
         self._analyze_service.analysis_failed.connect(self._on_analysis_failed)
 
         self._tray.activated.connect(self._screenshot_service.capture)
+        self._tray.watch_toggled.connect(self._watch_service.toggle)
         self._tray.capture_triggered.connect(self._screenshot_service.capture)
         self._tray.quit_triggered.connect(self.quit)
 
