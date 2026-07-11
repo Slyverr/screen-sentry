@@ -13,7 +13,7 @@ class TrayIcon(QSystemTrayIcon):
         super().__init__()
 
         icon_path = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "assets", "icon.png"
+            os.path.dirname(os.path.dirname(__file__)), "assets", "icon.svg"
         )
         self.setIcon(QIcon(icon_path))
         self.setToolTip("Screen Sentry")
