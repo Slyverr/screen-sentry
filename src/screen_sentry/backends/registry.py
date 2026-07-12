@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from screen_sentry.backends.base import Backend
+from screen_sentry.backends.custom import CustomBackend
 from screen_sentry.backends.openai_compat import OpenAICompatBackend
 
 _REGISTRY: dict[str, type[Backend]] = {
     "openai_compat": OpenAICompatBackend,
+    "custom": CustomBackend,
 }
 
 

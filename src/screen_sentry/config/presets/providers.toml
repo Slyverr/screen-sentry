@@ -4,17 +4,58 @@
 # implementation used to communicate with it. Available types:
 #
 #   "openai_compat" - Works with OpenAI-compatible chat completion APIs.
+#
+#   "custom"        - Bring-your-own request format via placeholders.
 
+# --- Local LM Studio ---------------------------------------------------
+# LM Studio exposes an OpenAI-compatible endpoint by default, so it
+# uses the same "openai" backend type — just point base_url at your
+# local server and leave api_key unset (or blank).
 [providers.lmstudio]
 type        = "openai_compat"
 base_url    = "http://localhost:1234/v1"
 model       = "your-local-model-name"
 temperature = 0.2
-# api_key = ""
+# api_key is not required for most local servers — omit or leave blank
 
+# --- Custom endpoint ---------------------------------------------------
+# Use "custom" when your endpoint doesn't match supported providers
+# You control the exact request body and headers, using placeholders
+# that get substituted before the request is sent:
+#
+#   {{system}}   -> app's system prompt         (required in body)
+#   {{prompt}}   -> app's user prompt            (required in body)
+#   {{image}}    -> base64-encoded image          (required in body)
+#   {{model}}    -> value of `model` below         (optional)
+#   {{api_key}}  -> value of `api_key` below         (optional)
+#
+# `response_path` is a dot-notation path used to pull the model's text
+# reply out of the JSON response, e.g. "choices.0.message.content"
+# reaches response["choices"][0]["message"]["content"].
+[providers.example]
+type          = "custom"
+url           = "https://api.example.com/v1/chat/completions"
+model         = "example-vision-model"
+api_key       = "your-api-key-here"
+response_path = "choices.0.message.content"
 
-[providers.openai]
-type     = "openai_compat"
-base_url = "https://api.openai.com/v1"
-model    = "gpt-4o-mini"
-api_key  = "your-api-key"
+headers = { Authorization = "Bearer {{api_key}}" }
+
+body = '''
+{
+  "model": "{{model}}",
+  "messages": [
+    { "role": "system", "content": "{{system}}" },
+    {
+      "role": "user",
+      "content": [
+        { "type": "text", "text": "{{prompt}}" },
+        {
+          "type": "image_url",
+          "image_url": { "url": "data:image/png;base64,{{image}}" }
+        }
+      ]
+    }
+  ]
+}
+'''
