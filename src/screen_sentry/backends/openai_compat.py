@@ -50,6 +50,7 @@ class OpenAICompatBackend(Backend):
         payload = {
             "model": self._opts.model,
             "temperature": self._opts.temperature,
+            "reasoning_effort": "none",
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {
