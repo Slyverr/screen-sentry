@@ -4,25 +4,25 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QIcon
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 
+from screen_sentry.context import AppContext
+
+_ASSETS_DIR = os.path.dirname(os.path.dirname(__file__))
+_ICON_PATH_WATCH = os.path.join(_ASSETS_DIR, "assets", "icon-watch.svg")
+_ICON_PATH_DEFAULT = os.path.join(_ASSETS_DIR, "assets", "icon.svg")
+
 
 class TrayIcon(QSystemTrayIcon):
     quit_triggered = Signal()
     capture_triggered = Signal()
     watch_toggled = Signal(bool)
 
-    def __init__(self) -> None:
+    def __init__(self, ctx: AppContext) -> None:
         super().__init__()
 
-        self._watch_enabled = False
+        self._ctx = ctx
 
-        self._assets_dir = os.path.dirname(os.path.dirname(__file__))
-        self._icon_path_watch = os.path.join(
-            self._assets_dir, "assets", "icon-watch.svg"
-        )
-        self._icon_path_default = os.path.join(self._assets_dir, "assets", "icon.svg")
-
-        self.setIcon(QIcon(self._icon_path_default))
         self._build_menu()
+        self._update_ui_state()
 
     def _build_menu(self) -> None:
         menu = QMenu()
@@ -35,17 +35,18 @@ class TrayIcon(QSystemTrayIcon):
         self.setContextMenu(menu)
 
     def _toggle_watch(self) -> None:
-        self._watch_enabled = not self._watch_enabled
+        watch_enabled = self._ctx.watch_service.is_running()
+        new_state = not watch_enabled
 
-        # Update menu text
-        self._watch_action.setText(
-            "Stop Watch Mode" if self._watch_enabled else "Start Watch Mode"
-        )
+        self.watch_toggled.emit(new_state)
+        self._update_ui_state()
 
-        # Update icon
-        if self._watch_enabled:
-            self.setIcon(QIcon(self._icon_path_watch))
+    def _update_ui_state(self) -> None:
+        is_running = self._ctx.watch_service.is_running()
+
+        if is_running:
+            self.setIcon(QIcon(_ICON_PATH_WATCH))
+            self._watch_action.setText("Stop Watch Mode")
         else:
-            self.setIcon(QIcon(self._icon_path_default))
-
-        self.watch_toggled.emit(self._watch_enabled)
+            self.setIcon(QIcon(_ICON_PATH_DEFAULT))
+            self._watch_action.setText("Start Watch Mode")

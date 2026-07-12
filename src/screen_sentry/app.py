@@ -30,7 +30,7 @@ class App(QApplication):
         self._ctx.watch_service = WatchService(self._ctx)
 
     def _init_tray(self) -> None:
-        self._tray = TrayIcon()
+        self._tray = TrayIcon(self._ctx)
         self._tray.show()
 
     def handle_cli_command(self, args: list[str]) -> None:
