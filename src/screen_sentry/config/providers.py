@@ -1,9 +1,8 @@
-import tomllib
-from importlib.resources import files
 from pathlib import Path
 
 from screen_sentry.backends.base import Backend
 from screen_sentry.backends.registry import get_backend_class
+from screen_sentry.utils.toml import get_dict, get_str, load_toml
 
 PROVIDERS_PATH = Path.home() / ".config" / "screen-sentry" / "providers.toml"
 
@@ -11,53 +10,32 @@ PROVIDERS_PATH = Path.home() / ".config" / "screen-sentry" / "providers.toml"
 class ProvidersConfig:
     def __init__(self, path: Path = PROVIDERS_PATH) -> None:
         self._path = path
-        if not path.exists():
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(
-                files("screen_sentry.config.presets")
-                .joinpath("providers.toml")
-                .read_text()
-            )
+        self._raw = load_toml(path, "providers.toml")
 
-        self._raw = tomllib.loads(path.read_text())
         self._instances: dict[str, Backend] = {}
 
-    @property
-    def active_name(self) -> str:
-        return self._raw["active"]
-
-    @property
-    def active(self) -> Backend:
-        return self.get(self.active_name)
-
-    def get(self, name: str) -> Backend:
-        """Return the backend instance for `name`, creating it on first use."""
+    def get_provider(self, name: str) -> Backend:
         if name not in self._instances:
-            self._instances[name] = self._build(name)
+            self._instances[name] = self._build_provider(name)
 
         return self._instances[name]
 
-    def _build(self, name: str) -> Backend:
-        try:
-            table = self._raw["providers"][name]
-        except KeyError:
-            raise ValueError(f"no provider named '{name}' in providers.toml") from None
-
-        try:
-            backend_type = table["type"]
-        except KeyError:
-            raise ValueError(
-                f"provider '{name}' is missing required 'type' field"
-            ) from None
+    def _build_provider(self, name: str) -> Backend:
+        backend_type = get_str(
+            self._raw,
+            f"providers.{name}.type",
+        )
+        if backend_type is None:
+            raise ValueError("Missing backend type")
 
         backend_cls = get_backend_class(backend_type)
-        return backend_cls(provider_name=name, config=table)
 
-    def names(self) -> list[str]:
-        return list(self._raw["providers"].keys())
+        config = get_dict(self._raw, f"providers.{name}", default={})
+        return backend_cls(provider_name=name, config=config)
 
-    def set_active(self, name: str) -> None:
-        if name not in self._raw["providers"]:
-            raise ValueError(f"no provider named '{name}' in providers.toml")
+    def list_providers(self) -> list[str]:
+        providers = self._raw.get("providers", {})
+        return list(providers.keys())
 
-        self._raw["active"] = name
+    def has_provider(self, name: str) -> bool:
+        return name in self._raw.get("providers", {})

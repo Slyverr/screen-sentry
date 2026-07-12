@@ -14,8 +14,8 @@ class AnalyzeService(QObject):
         self._ctx = ctx
         self._busy = False
 
-        provider_name = self._ctx.app_config.get("app", "provider")
-        self._backend = self._ctx.providers_config.get(provider_name)
+        provider_name = self._ctx.app_config.provider
+        self._backend = self._ctx.providers_config.get_provider(str(provider_name))
 
         self._backend.succeeded.connect(self._on_backend_succeeded)
         self._backend.network_error.connect(self._on_backend_network_error)
