@@ -14,12 +14,12 @@ _ICON_PATH_DEFAULT = os.path.join(_ASSETS_DIR, "assets", "icon.svg")
 class TrayIcon(QSystemTrayIcon):
     quit_triggered = Signal()
     capture_triggered = Signal()
-    watch_toggled = Signal(bool)
 
     def __init__(self, ctx: AppContext) -> None:
         super().__init__()
 
         self._ctx = ctx
+        self._ctx.watch_service.state_changed.connect(self._update_ui_state)
 
         self._build_menu()
         self._update_ui_state()
@@ -35,10 +35,7 @@ class TrayIcon(QSystemTrayIcon):
         self.setContextMenu(menu)
 
     def _toggle_watch(self) -> None:
-        watch_enabled = self._ctx.watch_service.is_running()
-        new_state = not watch_enabled
-
-        self.watch_toggled.emit(new_state)
+        self._ctx.watch_service.toggle()
         self._update_ui_state()
 
     def _update_ui_state(self) -> None:

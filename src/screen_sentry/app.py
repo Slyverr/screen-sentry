@@ -7,6 +7,7 @@ from screen_sentry.services.analyze import AnalyzeService
 from screen_sentry.services.screenshot import ScreenshotService
 from screen_sentry.services.watch import WatchService
 from screen_sentry.utils.analysis_parser import AnalysisResult
+from screen_sentry.views import tray
 from screen_sentry.views.tray import TrayIcon
 
 
@@ -61,7 +62,6 @@ class App(QApplication):
         ctx.analyze_service.analysis_failed.connect(self._on_analysis_failed)
 
         self._tray.activated.connect(ctx.screenshot_service.capture)
-        self._tray.watch_toggled.connect(ctx.watch_service.toggle)
         self._tray.capture_triggered.connect(ctx.screenshot_service.capture)
         self._tray.quit_triggered.connect(self.quit)
 

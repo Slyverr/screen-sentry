@@ -6,6 +6,7 @@ from screen_sentry.context import AppContext
 class WatchService(QObject):
     watch_capture_finished = Signal(bytes)
     watch_capture_failed = Signal(str)
+    state_changed = Signal(bool)
 
     def __init__(self, ctx: AppContext, parent: QObject | None = None) -> None:
 
@@ -18,15 +19,17 @@ class WatchService(QObject):
 
     def start(self) -> None:
         self._timer.start()
+        self.state_changed.emit(True)
 
     def stop(self) -> None:
         self._timer.stop()
+        self.state_changed.emit(False)
 
     def toggle(self) -> None:
         if self.is_running():
-            self._timer.stop()
+            self.stop()
         else:
-            self._timer.start()
+            self.start()
 
     def is_running(self) -> bool:
         return self._timer.isActive()
