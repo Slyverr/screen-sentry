@@ -24,28 +24,45 @@ class App(QApplication):
         self._connect_signals()
 
     def _init_services(self) -> None:
-        context = AppContext()
-
-        self._screenshot_service = ScreenshotService(context)
-        self._analyze_service = AnalyzeService(context)
-        self._watch_service = WatchService(context)
+        self._ctx = AppContext()
+        self._ctx.screenshot_service = ScreenshotService(self._ctx)
+        self._ctx.analyze_service = AnalyzeService(self._ctx)
+        self._ctx.watch_service = WatchService(self._ctx)
 
     def _init_tray(self) -> None:
         self._tray = TrayIcon()
         self._tray.show()
 
+    def handle_cli_command(self, args: list[str]) -> None:
+        if not args:
+            return
+
+        ctx = self._ctx
+        match args:
+            case ["watch", "on"]:
+                ctx.watch_service.start()
+            case ["watch", "off"]:
+                ctx.watch_service.stop()
+            case ["watch", "toggle"]:
+                ctx.watch_service.toggle()
+            case ["capture"]:
+                ctx.screenshot_service.capture()
+            case ["quit"]:
+                self.quit()
+            case _:
+                print(f"unknown command: {' '.join(args)}", file=sys.stderr)
+
     def _connect_signals(self) -> None:
-        self._screenshot_service.capture_finished.connect(self._analyze_service.analyze)
-        self._watch_service.watch_capture_finished.connect(
-            self._analyze_service.analyze
-        )
+        ctx = self._ctx
+        ctx.screenshot_service.capture_finished.connect(ctx.analyze_service.analyze)
+        ctx.watch_service.watch_capture_finished.connect(ctx.analyze_service.analyze)
 
-        self._analyze_service.analysis_finished.connect(self._on_analysis_finished)
-        self._analyze_service.analysis_failed.connect(self._on_analysis_failed)
+        ctx.analyze_service.analysis_finished.connect(self._on_analysis_finished)
+        ctx.analyze_service.analysis_failed.connect(self._on_analysis_failed)
 
-        self._tray.activated.connect(self._screenshot_service.capture)
-        self._tray.watch_toggled.connect(self._watch_service.toggle)
-        self._tray.capture_triggered.connect(self._screenshot_service.capture)
+        self._tray.activated.connect(ctx.screenshot_service.capture)
+        self._tray.watch_toggled.connect(ctx.watch_service.toggle)
+        self._tray.capture_triggered.connect(ctx.screenshot_service.capture)
         self._tray.quit_triggered.connect(self.quit)
 
     def _on_analysis_finished(self, result: AnalysisResult) -> None:
