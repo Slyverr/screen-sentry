@@ -1,23 +1,20 @@
+# Defines the AI providers Screen Sentry can use to analyze captures.
+#
+# Every provider needs a `type` field, which selects the backend
+# implementation used to communicate with it. Available types:
+#
+#   "openai_compat" - Works with OpenAI-compatible chat completion APIs.
+
 [providers.lmstudio]
-url = "http://localhost:1234/api/v1/chat"
-body = """
-{
-  "model": "{{model}}",
-  "input": [
-    {
-      "type": "text",
-      "content": "{{prompt}}"
-    },
-    {
-      "type": "image",
-      "data_url": "data:image/png;base64,{{image}}"
-    }
-  ],
-  "system_prompt": "{{system}}",
-  "temperature": 0.1,
-  "reasoning": "off"
-}
-"""
-response_path = "output.0.content"
-model = "qwen/qwen3.5-9b"
-timeout = 120
+type        = "openai_compat"
+base_url    = "http://localhost:1234/v1"
+model       = "your-local-model-name"
+temperature = 0.2
+# api_key = ""
+
+
+[providers.openai]
+type     = "openai_compat"
+base_url = "https://api.openai.com/v1"
+model    = "gpt-4o-mini"
+api_key  = "your-api-key"

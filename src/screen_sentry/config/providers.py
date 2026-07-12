@@ -1,46 +1,16 @@
-import json
 import tomllib
-from dataclasses import dataclass
 from importlib.resources import files
 from pathlib import Path
 
+from screen_sentry.backends.base import Backend
+from screen_sentry.backends.registry import get_backend_class
+
 PROVIDERS_PATH = Path.home() / ".config" / "screen-sentry" / "providers.toml"
-
-
-@dataclass
-class ProviderConfig:
-    url: str
-    body: str
-    response_path: str
-    model: str
-    timeout: int = 60
-
-    def render_body(self, prompt: str, image_b64: str, system: str = "") -> dict:
-        rendered = (
-            self.body.replace("{{model}}", self.model)
-            .replace("{{system}}", json.dumps(system)[1:-1])
-            .replace("{{prompt}}", json.dumps(prompt)[1:-1])
-            .replace("{{image}}", image_b64)
-        )
-
-        return json.loads(rendered)
-
-    def extract_response(self, response_json: dict) -> str:
-        value = response_json
-
-        for part in self.response_path.split("."):
-            if part.isdigit():
-                value = value[int(part)]
-            else:
-                value = value[part]
-
-        return value
 
 
 class ProvidersConfig:
     def __init__(self, path: Path = PROVIDERS_PATH) -> None:
         self._path = path
-
         if not path.exists():
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(
@@ -50,17 +20,44 @@ class ProvidersConfig:
             )
 
         self._raw = tomllib.loads(path.read_text())
+        self._instances: dict[str, Backend] = {}
 
     @property
     def active_name(self) -> str:
         return self._raw["active"]
 
     @property
-    def active(self) -> ProviderConfig:
+    def active(self) -> Backend:
         return self.get(self.active_name)
 
-    def get(self, name: str) -> ProviderConfig:
-        return ProviderConfig(**self._raw["providers"][name])
+    def get(self, name: str) -> Backend:
+        """Return the backend instance for `name`, creating it on first use."""
+        if name not in self._instances:
+            self._instances[name] = self._build(name)
+
+        return self._instances[name]
+
+    def _build(self, name: str) -> Backend:
+        try:
+            table = self._raw["providers"][name]
+        except KeyError:
+            raise ValueError(f"no provider named '{name}' in providers.toml") from None
+
+        try:
+            backend_type = table["type"]
+        except KeyError:
+            raise ValueError(
+                f"provider '{name}' is missing required 'type' field"
+            ) from None
+
+        backend_cls = get_backend_class(backend_type)
+        return backend_cls(provider_name=name, config=table)
 
     def names(self) -> list[str]:
         return list(self._raw["providers"].keys())
+
+    def set_active(self, name: str) -> None:
+        if name not in self._raw["providers"]:
+            raise ValueError(f"no provider named '{name}' in providers.toml")
+
+        self._raw["active"] = name

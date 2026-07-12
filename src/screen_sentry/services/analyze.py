@@ -1,9 +1,5 @@
-import base64
-
-import requests
 from PySide6.QtCore import QObject, Signal
 
-from screen_sentry.config.prompts import SYSTEM_PROMPT, USER_PROMPT
 from screen_sentry.context import AppContext
 from screen_sentry.utils.analysis_parser import AnalysisResult, parse_analysis
 
@@ -16,26 +12,37 @@ class AnalyzeService(QObject):
         super().__init__(parent)
 
         self._ctx = ctx
+        self._busy = False
+
+        provider_name = self._ctx.app_config.get("app", "provider")
+        self._backend = self._ctx.providers_config.get(provider_name)
+
+        self._backend.succeeded.connect(self._on_backend_succeeded)
+        self._backend.network_error.connect(self._on_backend_network_error)
+        self._backend.api_error.connect(self._on_backend_api_error)
 
     def analyze(self, image_bytes: bytes) -> None:
+        if self._busy:
+            return
+
+        self._busy = True
+        self._backend.send(image_bytes)
+
+    def _on_backend_succeeded(self, raw_text: str) -> None:
+        self._busy = False
+
         try:
-            raw = self._call_model(image_bytes)
-            result = parse_analysis(raw)
+            result = parse_analysis(raw_text)
         except Exception as exc:
-            self.analysis_failed.emit(str(exc))
+            self.analysis_failed.emit(f"parse error: {exc}")
             return
 
         self.analysis_finished.emit(result)
 
-    def _call_model(self, image_bytes: bytes) -> str:
-        provider_name = self._ctx.app_config.get("app", "provider")
-        provider = self._ctx.providers_config.get(provider_name)
-        image_b64 = base64.b64encode(image_bytes).decode()
+    def _on_backend_network_error(self, detail: str) -> None:
+        self._busy = False
+        self.analysis_failed.emit(f"network error: {detail}")
 
-        body = provider.render_body(
-            system=SYSTEM_PROMPT, prompt=USER_PROMPT, image_b64=image_b64
-        )
-
-        response = requests.post(provider.url, json=body, timeout=provider.timeout)
-        response.raise_for_status()
-        return provider.extract_response(response.json())
+    def _on_backend_api_error(self, detail: str) -> None:
+        self._busy = False
+        self.analysis_failed.emit(f"api error: {detail}")
