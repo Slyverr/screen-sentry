@@ -6,7 +6,11 @@ from screen_sentry.context import AppContext
 from screen_sentry.services.analyze import AnalyzeService
 from screen_sentry.services.screenshot import ScreenshotService
 from screen_sentry.services.watch import WatchService
-from screen_sentry.utils.analysis_parser import AnalysisResult
+from screen_sentry.utils.analysis_parser import (
+    AnalysisResult,
+    AnalysisSource,
+    ThreatLevel,
+)
 from screen_sentry.views import tray
 from screen_sentry.views.tray import TrayIcon
 
@@ -66,6 +70,12 @@ class App(QApplication):
         self._tray.quit_triggered.connect(self.quit)
 
     def _on_analysis_finished(self, result: AnalysisResult) -> None:
+        if (
+            result.image.source == AnalysisSource.WATCH
+            and result.level == ThreatLevel.NO_THREAT
+        ):
+            return
+
         self._tray.showMessage(
             "Analysis Complete",
             result.message,
