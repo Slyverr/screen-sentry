@@ -1,7 +1,11 @@
 from PySide6.QtCore import QObject, Signal
 
 from screen_sentry.context import AppContext
-from screen_sentry.utils.analysis_parser import AnalysisResult, parse_analysis
+from screen_sentry.utils.analysis_parser import (
+    AnalysisImage,
+    AnalysisResult,
+    parse_analysis,
+)
 
 
 class AnalyzeService(QObject):
@@ -21,12 +25,12 @@ class AnalyzeService(QObject):
         self._backend.network_error.connect(self._on_backend_network_error)
         self._backend.api_error.connect(self._on_backend_api_error)
 
-    def analyze(self, image_bytes: bytes) -> None:
+    def analyze(self, image: AnalysisImage) -> None:
         if self._busy:
             return
 
         self._busy = True
-        self._backend.send(image_bytes)
+        self._backend.send(image.data)
 
     def _on_backend_succeeded(self, raw_text: str) -> None:
         self._busy = False

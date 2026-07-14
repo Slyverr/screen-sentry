@@ -1,12 +1,23 @@
 import re
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, StrEnum
 
 
 class ThreatLevel(Enum):
     THREAT = "THREAT"
     UNCERTAIN = "UNCERTAIN"
     NO_THREAT = "NO_THREAT"
+
+
+class AnalysisSource(StrEnum):
+    CAPTURE = "capture"
+    WATCH = "watch"
+
+
+@dataclass
+class AnalysisImage:
+    data: bytes
+    source: AnalysisSource
 
 
 @dataclass

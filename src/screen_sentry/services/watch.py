@@ -1,10 +1,11 @@
 from PySide6.QtCore import QObject, QProcess, QTimer, Signal
 
 from screen_sentry.context import AppContext
+from screen_sentry.utils.analysis_parser import AnalysisImage, AnalysisSource
 
 
 class WatchService(QObject):
-    watch_capture_finished = Signal(bytes)
+    watch_capture_finished = Signal(AnalysisImage)
     watch_capture_failed = Signal(str)
     state_changed = Signal(bool)
 
@@ -48,8 +49,8 @@ class WatchService(QObject):
         if process is None:
             return
 
-        data = process.readAllStandardOutput().data()
+        data = bytes(process.readAllStandardOutput().data())
         if exit_code == 0 and data:
-            self.watch_capture_finished.emit(data)
+            self.watch_capture_finished.emit(AnalysisImage(data, AnalysisSource.WATCH))
         else:
             self.watch_capture_failed.emit("Watch capture failed")

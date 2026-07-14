@@ -1,10 +1,11 @@
 from PySide6.QtCore import QObject, QProcess, Signal
 
 from screen_sentry.context import AppContext
+from screen_sentry.utils.analysis_parser import AnalysisImage, AnalysisSource
 
 
 class ScreenshotService(QObject):
-    capture_finished = Signal(bytes)
+    capture_finished = Signal(AnalysisImage)
     capture_failed = Signal(str)
 
     def __init__(self, ctx: AppContext, parent: QObject | None = None) -> None:
@@ -26,8 +27,8 @@ class ScreenshotService(QObject):
         if process is None:
             return
 
-        data = process.readAllStandardOutput().data()
+        data = bytes(process.readAllStandardOutput().data())
         if exit_code == 0 and data:
-            self.capture_finished.emit(data)
+            self.capture_finished.emit(AnalysisImage(data, AnalysisSource.CAPTURE))
         else:
             self.capture_failed.emit("Flameshot capture failed or was cancelled")
