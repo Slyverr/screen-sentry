@@ -9,6 +9,7 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkRe
 
 from screen_sentry.backends.base import Backend
 from screen_sentry.config.prompts import SYSTEM_PROMPT, USER_PROMPT
+from screen_sentry.utils.analysis_parser import AnalysisImage
 
 REQUIRED_PLACEHOLDERS = ("{{system}}", "{{prompt}}", "{{image}}")
 
@@ -93,8 +94,8 @@ class CustomBackend(Backend):
             timeout=config.get("timeout", 60),
         )
 
-    def send(self, image_bytes: bytes) -> None:
-        image_b64 = base64.b64encode(image_bytes).decode("ascii")
+    def send(self, image: AnalysisImage) -> None:
+        image_b64 = base64.b64encode(image.data).decode("ascii")
 
         rendered_body = self._render(self._opts.body, image_b64)
         try:
@@ -116,7 +117,7 @@ class CustomBackend(Backend):
 
         body_bytes = QByteArray(json.dumps(payload).encode("utf-8"))
         reply = self._manager.post(request, body_bytes)
-        reply.finished.connect(lambda: self._on_finished(reply))
+        reply.finished.connect(lambda: self._on_finished(image, reply))
 
     def _render(self, template: str, image_b64: str | None) -> str:
         """Substitute placeholders. image_b64=None skips {{image}} (used for headers)."""
@@ -132,7 +133,7 @@ class CustomBackend(Backend):
             rendered = rendered.replace("{{api_key}}", self._opts.api_key)
         return rendered
 
-    def _on_finished(self, reply: QNetworkReply) -> None:
+    def _on_finished(self, image: AnalysisImage, reply: QNetworkReply) -> None:
         reply.deleteLater()
 
         if reply.error() != QNetworkReply.NetworkError.NoError:
@@ -158,7 +159,7 @@ class CustomBackend(Backend):
             )
             return
 
-        self.succeeded.emit(text)
+        self.succeeded.emit(image, text)
 
     @staticmethod
     def _extract(data, path: str) -> str:

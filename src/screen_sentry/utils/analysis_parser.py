@@ -22,13 +22,14 @@ class AnalysisImage:
 
 @dataclass
 class AnalysisResult:
+    image: AnalysisImage
     level: ThreatLevel
     category: str | None
     message: str
     raw: str
 
 
-def parse_analysis(raw: str) -> AnalysisResult:
+def parse_analysis(image: AnalysisImage, raw: str) -> AnalysisResult:
     raw = raw.strip()
 
     match = re.match(
@@ -39,6 +40,7 @@ def parse_analysis(raw: str) -> AnalysisResult:
         level_str, category, message = match.groups()
         level = ThreatLevel(level_str)
         return AnalysisResult(
+            image,
             level=level,
             category=category if level != ThreatLevel.NO_THREAT else None,
             message=message.strip(),
@@ -46,6 +48,7 @@ def parse_analysis(raw: str) -> AnalysisResult:
         )
 
     return AnalysisResult(
+        image,
         level=ThreatLevel.UNCERTAIN,
         category="PARSE_ERROR",
         message=raw,

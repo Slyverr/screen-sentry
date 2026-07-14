@@ -7,6 +7,7 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequ
 
 from screen_sentry.backends.base import Backend
 from screen_sentry.config.prompts import SYSTEM_PROMPT, USER_PROMPT
+from screen_sentry.utils.analysis_parser import AnalysisImage
 
 
 @dataclass
@@ -44,8 +45,8 @@ class OpenAICompatBackend(Backend):
             api_key=config.get("api_key"),
         )
 
-    def send(self, image_bytes: bytes) -> None:
-        image_b64 = base64.b64encode(image_bytes).decode("ascii")
+    def send(self, image: AnalysisImage) -> None:
+        image_b64 = base64.b64encode(image.data).decode("ascii")
 
         payload = {
             "model": self._opts.model,
@@ -78,9 +79,9 @@ class OpenAICompatBackend(Backend):
 
         body = QByteArray(json.dumps(payload).encode("utf-8"))
         reply = self._manager.post(request, body)
-        reply.finished.connect(lambda: self._on_finished(reply))
+        reply.finished.connect(lambda: self._on_finished(image, reply))
 
-    def _on_finished(self, reply: QNetworkReply) -> None:
+    def _on_finished(self, image: AnalaysisImage, reply: QNetworkReply) -> None:
         reply.deleteLater()
 
         if reply.error() != QNetworkReply.NetworkError.NoError:
@@ -107,7 +108,7 @@ class OpenAICompatBackend(Backend):
             self._fail_api(f"unexpected response shape: {data!r}")
             return
 
-        self.succeeded.emit(text)
+        self.succeeded.emit(image, text)
 
     @staticmethod
     def _extract_error_detail(raw: bytes) -> str | None:

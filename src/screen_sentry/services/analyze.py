@@ -30,13 +30,13 @@ class AnalyzeService(QObject):
             return
 
         self._busy = True
-        self._backend.send(image.data)
+        self._backend.send(image)
 
-    def _on_backend_succeeded(self, raw_text: str) -> None:
+    def _on_backend_succeeded(self, image: AnalysisImage, raw_text: str) -> None:
         self._busy = False
 
         try:
-            result = parse_analysis(raw_text)
+            result = parse_analysis(image, raw_text)
         except Exception as exc:
             self.analysis_failed.emit(f"parse error: {exc}")
             return

@@ -2,9 +2,11 @@ from abc import abstractmethod
 
 from PySide6.QtCore import QObject, Signal
 
+from screen_sentry.utils.analysis_parser import AnalysisImage
+
 
 class Backend(QObject):
-    succeeded = Signal(str)
+    succeeded = Signal(AnalysisImage, str)
     network_error = Signal(str)
     api_error = Signal(str)
 
@@ -17,7 +19,7 @@ class Backend(QObject):
         self.config = config
 
     @abstractmethod
-    def send(self, image_bytes: bytes) -> None:
+    def send(self, image: AnalysisImage) -> None:
         raise NotImplementedError
 
     def _fail_network(self, detail: str) -> None:
