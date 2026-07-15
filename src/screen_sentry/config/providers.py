@@ -1,10 +1,13 @@
 from pathlib import Path
 
+from platformdirs import user_config_dir
+
 from screen_sentry.backends.base import Backend
 from screen_sentry.backends.registry import get_backend_class
 from screen_sentry.utils.toml import get_dict, get_str, load_toml
 
-PROVIDERS_PATH = Path.home() / ".config" / "screen-sentry" / "providers.toml"
+CONFIG_DIR = Path(user_config_dir("screen-sentry"))
+PROVIDERS_PATH = CONFIG_DIR / "providers.toml"
 
 
 class ProvidersConfig:

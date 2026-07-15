@@ -1,9 +1,11 @@
 from pathlib import Path
 
+from platformdirs import user_config_dir
+
 from screen_sentry.utils.toml import get_str, load_toml
 
-
-CONFIG_PATH = Path.home() / ".config" / "screen-sentry" / "config.toml"
+CONFIG_DIR = Path(user_config_dir("screen-sentry"))
+CONFIG_PATH = CONFIG_DIR / "config.toml"
 
 
 class AppConfig:
